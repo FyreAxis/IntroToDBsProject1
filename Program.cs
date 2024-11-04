@@ -1,4 +1,7 @@
 using Microsoft.EntityFrameworkCore;
+using DbProject1.Data;
+using DbProject1.Repositories;
+using DbProject1.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -9,6 +12,9 @@ builder.Services.AddDbContext<AppDbContext>(
     options.UseSqlite(
         builder.Configuration.GetConnectionString("DefaultConnection"))
     );
+// Registering services and repositories
+builder.Services.AddScoped<IAccountRepository, AccountRepository>();
+builder.Services.AddScoped<IAccountService, AccountService>();
 
 var app = builder.Build();
 
