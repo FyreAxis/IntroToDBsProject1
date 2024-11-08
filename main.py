@@ -25,8 +25,9 @@ class GUI:
         GUI.ent_username.insert(0, "Username")
         GUI.ent_password.pack()
         GUI.ent_password.insert(0, "Password")
-        GUI.btn_login.pack(side='right')
-        GUI.btn_signup_navigate.pack(side='left')
+        GUI.btn_login.pack(side='bottom')
+        GUI.btn_signup_navigate.pack(side='right')
+        GUI.btn_create_org.pack(side='left')
 
     def loginAuthentication():
         username = GUI.ent_username.get()
@@ -41,12 +42,7 @@ class GUI:
             res = cur.execute("SELECT PasswordHash FROM Accounts WHERE Username = ?", username_tuple)
             password_hash_object_grab = res.fetchone()
             correct_password_hash = password_hash_object_grab[0]
-            print("Hashed Input: ")
-            print(password_hash)
-            print("Correct: ")
-            print(correct_password_hash)
             if password_hash == correct_password_hash:
-                hiree_id.set("HireeID: {}".format(GUI.getHireeID(username)))
                 GUI.closeLogin()
                 GUI.openDefaultScreen()
             else:
@@ -62,6 +58,7 @@ class GUI:
         GUI.ent_password.pack_forget()
         GUI.btn_login.pack_forget()
         GUI.btn_signup_navigate.pack_forget()
+        GUI.btn_create_org.pack_forget()
 
 #signup
 
@@ -70,7 +67,7 @@ class GUI:
         GUI.lbl_login.pack(side='top')
         GUI.ent_username.pack()
 
-        if GUI.username_save != "": #save case for user (currently prints twice)
+        if GUI.username_save != "": #save case for user TODO: fix double user & pw
             GUI.ent_username.insert(0, GUI.username_save)
         else:
             GUI.ent_username.insert(0, "Username")
@@ -112,6 +109,7 @@ class GUI:
 
     def closeSignup(): #closes signup gui
         GUI.lbl_login.pack_forget()
+        GUI.username_save = GUI.ent_username.get()
         GUI.ent_username.pack_forget()
         GUI.ent_email.pack_forget()
         GUI.ent_password.pack_forget()
@@ -135,6 +133,7 @@ class GUI:
         con.commit()
 
 #profile creation
+
     def showProfileCreate(): #TODO: needs label saying to create remember HireeID to assign to org
         GUI.lbl_create_profile.pack()
         hiree_id.set("HireeID: {}".format(GUI.freshHireeID))
@@ -230,10 +229,73 @@ class GUI:
             table.insert("", tk.END, values = row)
         table.heading("Org Name", text = "Name")
         table.pack()
+
+    def findHirees():
+        pass #TODO
    
-    def openDefaultScreen(): #TODO: needs manager case, also show all profile (new lbls)
+    def openDefaultScreen():
+        #TODO: if hiring manager
+        #     btn_find_hiree.pack()
+        # else:    
+        GUI.btn_show_profile.pack(side = 'bottom')
+        GUI.btn_search.pack(side = 'bottom')
+
+    def showProfile():
+        cur = con.cursor()
+        hiree_id_number = GUI.getHireeID(GUI.username_save)
+        hiree_id_tuple = (hiree_id_number,)
+        cur.execute("SELECT a.Email, i.First_Name, i.Last_Name, i.Suffix, d.Department, d.JobTitle, d.YearsOfExperience, d.BachelorsFrom FROM Accounts AS a JOIN Info as i ON a.HireeID = i.HireeID JOIN Data as d ON i.HireeID = d.HireeID WHERE a.HireeID = ?;", hiree_id_tuple)
+        giant_tuple = cur.fetchone()
+        name.set("Name: {} {} {}".format(giant_tuple[1], giant_tuple[2], giant_tuple[3]))
+        hiree_id.set("HireeID: {}".format(hiree_id_number))
+        username.set("Username: {}".format(GUI.username_save))
+        email.set("Email: {}".format(giant_tuple[0]))
+        department.set("Department: {}".format(giant_tuple[4]))
+        job_title.set("Job Title: {}".format(giant_tuple[5]))
+        years_of_experience.set("Years of Experience: {}".format(giant_tuple[6]))
+        bachelors_from.set("Bachelors From: {}".format(giant_tuple[7]))
+        GUI.lbl_account_info.pack() #categorizes as acc info
+        lbl_name.pack()
         lbl_hiree_id.pack()
-        GUI.btn_search.pack()
+        lbl_username.pack()
+        lbl_email.pack()
+        GUI.lbl_info_info.pack()
+        lbl_department.pack()
+        lbl_job_title.pack()
+        if giant_tuple[6] != "":
+            lbl_years_of_experience.pack()
+        if giant_tuple[7] != "":
+            lbl_bachelors_from.pack()
+        #TODO: if hired
+            # GUI.lbl_org_info.pack()
+            # lbl_org_id.pack()
+            # lbl_org_name.pack()
+            # lbl_industry.pack()
+            # lbl_looking_for_applicants.pack()
+        GUI.ent_change_username.pack(side='bottom')
+        GUI.ent_change_username.insert(0, "Change username: ")
+        GUI.btn_change_username.pack()
+        GUI.btn_delete_account.pack(side='bottom') #TODO: make sure bottommost button
+        #TODO: remove search and show profile buttons
+        #TODO: make and call a closeDefaultScreen
+
+    def changeUsername():
+        cur = con.cursor()
+        hiree_id_number = GUI.getHireeID(GUI.username_save)
+        new_username = GUI.ent_change_username.get()
+        tuple = (new_username, hiree_id_number,)
+        cur.execute("UPDATE Accounts SET Username = ? WHERE a.HireeID = ?;", tuple)
+        con.commit()
+        #if doesn't update, call showProfile() again
+
+    def deleteAccount():
+        cur = con.cursor()
+        hiree_id_number = GUI.getHireeID(GUI.username_save)
+        hiree_id_tuple = (hiree_id_number,)
+        cur.execute("DELETE FROM Accounts WHERE HireeID = ?", hiree_id_tuple)
+        cur.execute("DELETE FROM Info WHERE HireeID = ?", hiree_id_tuple)
+        cur.execute("DELETE FROM Data WHERE HireeID = ?", hiree_id_tuple)
+        con.commit()
 
 #login assets
 
@@ -245,12 +307,6 @@ class GUI:
         width = 50, #remember, these are "text units" not pixels
         height = 7 
         )
-
-    lbl_is_manager = tk.Label(text = "Our records indicate you are a manager",
-        fg = "black",
-        bg = "thistle",
-        width = 50,
-        height = 7)
 
     lbl_make_manager = tk.Label(text = "You will be making a manager account",
         fg = "black",
@@ -267,14 +323,14 @@ class GUI:
     btn_login = tk.Button(text = "Log In", #add authentication
         fg = "black",
         bg = "thistle",
-        width = 5,
+        width = 10,
         height = 1,
         command = loginAuthentication)
 
     btn_signup_navigate = tk.Button(text = "Sign Up", #leads to signup screen
         fg = "black",
         bg = "thistle",
-        width = 5,
+        width = 10,
         height = 1,
         command = openSignup)
 
@@ -284,9 +340,11 @@ class GUI:
     ent_username = tk.Entry(fg = "black",
         bg = "white",
         width = 30)
+
     ent_password = tk.Entry(fg = "black",
         bg = "white",
         width = 30)
+
     ent_email = tk.Entry(fg = "black",
         bg = "white",
         width = 30)
@@ -294,7 +352,7 @@ class GUI:
     btn_signup = tk.Button(text = "Sign Up", #add into db, pack ent_email, forget login
         fg = "black",
         bg = "thistle",
-        width = 5,
+        width = 10,
         height = 1,
         command = signupAuthentication)
     
@@ -357,6 +415,13 @@ class GUI:
 
 #create org
 
+    btn_create_org = tk.Button(text = "Make Org",
+        fg = "black",
+        bg = "thistle",
+        width = 10,
+        height = 1,
+        command = createOrg)
+    
     ent_org_name = tk.Entry(fg = "black",
         bg = "white",
         width = 30)
@@ -373,6 +438,37 @@ class GUI:
 
     #main GUI assets
 
+    lbl_account_info = tk.Label(text="Account Information",
+        fg = "black",
+        bg = "thistle",
+        width = 100,
+        height = 3)
+
+    lbl_info_info = tk.Label(text="Hiree Information",
+        fg = "black",
+        bg = "thistle",
+        width = 100,
+        height = 3)
+
+    lbl_org_info = tk.Label(text="Org Information",
+        fg = "black",
+        bg = "thistle",
+        width = 100,
+        height = 3)
+
+    lbl_is_manager = tk.Label(text = "Our records indicate you are a manager",
+        fg = "black",
+        bg = "thistle",
+        width = 50,
+        height = 7)
+
+    btn_show_profile = tk.Button(text = "Show Profile",
+        fg = "black",
+        bg = "thistle",
+        width = 10,
+        height = 1,
+        command = showProfile)
+
     btn_search = tk.Button(text = "Search",
         fg = "black",
         bg = "thistle",
@@ -380,9 +476,34 @@ class GUI:
         height = 1,
         command = searchOrgs)
 
+    btn_change_username = tk.Button(text = "Change Username",
+        fg = "black",
+        bg = "thistle",
+        width = 15,
+        height = 1,
+        command = changeUsername)
+
+    ent_change_username = tk.Entry(fg = "black",
+        bg = "white",
+        width = 30)
+
+    btn_delete_account = tk.Button(text = "Delete Account",
+        fg = "black",
+        bg = "thistle",
+        width = 15,
+        height = 1,
+        command = deleteAccount)
+    
+    btn_find_hirees = tk.Button(text = "Find Hirees",
+        fg = "black",
+        bg = "thistle",
+        width = 5,
+        height = 1,
+        command = findHirees) 
+
 #creates our initial login (main)
 
-root = tk.Tk() #creates window
+root = tk.Tk() #creates window TODO: fix second window
 root.title("CRUD Corp") #titles window
 root.minsize(500,500) #sets window min size
 con = sqlite3.connect("CRUD_Corp_Copy.db") #connects to db
@@ -390,11 +511,86 @@ cur = con.cursor() #creates our cursor
 
 #main GUI assets continued (with StringVar())
 
-global hiree_id 
+name = tk.StringVar()
 hiree_id = tk.StringVar()
+username = tk.StringVar()
+email = tk.StringVar()
+department = tk.StringVar()
+job_title = tk.StringVar()
+years_of_experience = tk.StringVar()
+bachelors_from = tk.StringVar()
+org_id = tk.StringVar()
+org_name = tk.StringVar()
+industry = tk.StringVar()
+looking_for_applicants = tk.StringVar()
 
-global lbl_hiree_id
+lbl_name = tk.Label(textvariable = name,
+    fg = "black",
+    bg = "thistle",
+    width = 100,
+    height = 3) 
+
 lbl_hiree_id = tk.Label(textvariable = hiree_id,
+    fg = "black",
+    bg = "thistle",
+    width = 100,
+    height = 3) 
+
+lbl_username = tk.Label(textvariable = username,
+    fg = "black",
+    bg = "thistle",
+    width = 100,
+    height = 3) 
+
+lbl_email = tk.Label(textvariable = email,
+    fg = "black",
+    bg = "thistle",
+    width = 100,
+    height = 3) 
+
+lbl_department = tk.Label(textvariable = department,
+    fg = "black",
+    bg = "thistle",
+    width = 100,
+    height = 3) 
+
+lbl_job_title = tk.Label(textvariable = job_title,
+    fg = "black",
+    bg = "thistle",
+    width = 100,
+    height = 3) 
+
+lbl_years_of_experience = tk.Label(textvariable = years_of_experience,
+    fg = "black",
+    bg = "thistle",
+    width = 100,
+    height = 3) 
+
+lbl_bachelors_from = tk.Label(textvariable = bachelors_from,
+    fg = "black",
+    bg = "thistle",
+    width = 100,
+    height = 3) 
+
+lbl_org_id = tk.Label(textvariable = org_id,
+    fg = "black",
+    bg = "thistle",
+    width = 100,
+    height = 3) 
+
+lbl_org_name = tk.Label(textvariable = org_name,
+    fg = "black",
+    bg = "thistle",
+    width = 100,
+    height = 3) 
+
+lbl_industry = tk.Label(textvariable = industry,
+    fg = "black",
+    bg = "thistle",
+    width = 100,
+    height = 3) 
+
+lbl_looking_for_applicants = tk.Label(textvariable = looking_for_applicants,
     fg = "black",
     bg = "thistle",
     width = 100,
