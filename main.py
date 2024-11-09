@@ -8,6 +8,8 @@ class GUI:
     
     username_save = "" #used for saving user input when typing into log in before switching to sign up
     password_save = ""
+    is_hired = False
+    is_manager = False
 
     freshHireeID = 0 #used for making new accs
     freshOrgID = 0
@@ -27,7 +29,7 @@ class GUI:
         GUI.ent_password.insert(0, "Password")
         GUI.btn_login.pack(side='bottom')
         GUI.btn_signup_navigate.pack(side='right')
-        GUI.btn_create_org.pack(side='left')
+        GUI.btn_org_navigate.pack(side='left')
 
     def loginAuthentication():
         username = GUI.ent_username.get()
@@ -46,9 +48,29 @@ class GUI:
                 GUI.closeLogin()
                 GUI.openDefaultScreen()
             else:
-                print("Incorrect Password")
+                alert = tk.Tk()
+
+                lbl_empty_fields_alert = tk.Label(alert, text = "This password is incorrect",
+                fg = "black",
+                bg = "thistle",
+                width = 50,
+                height = 7)
+
+                lbl_empty_fields_alert.pack()
+
+                alert.mainloop()
         else:
-            print("Incorrect Username")
+            alert = tk.Tk()
+
+            lbl_empty_fields_alert = tk.Label(alert, text = "This username is incorrect",
+            fg = "black",
+            bg = "thistle",
+            width = 50,
+            height = 7)
+
+            lbl_empty_fields_alert.pack()
+
+            alert.mainloop()
 
     def closeLogin(): #closes gui and saves input to restore if necessary
         GUI.lbl_login.pack_forget()
@@ -58,7 +80,7 @@ class GUI:
         GUI.ent_password.pack_forget()
         GUI.btn_login.pack_forget()
         GUI.btn_signup_navigate.pack_forget()
-        GUI.btn_create_org.pack_forget()
+        GUI.btn_org_navigate.pack_forget()
 
 #signup
 
@@ -67,16 +89,8 @@ class GUI:
         GUI.lbl_login.pack(side='top')
         GUI.ent_username.pack()
 
-        if GUI.username_save != "": #save case for user TODO: fix double user & pw
-            GUI.ent_username.insert(0, GUI.username_save)
-        else:
-            GUI.ent_username.insert(0, "Username")
         GUI.ent_password.pack()
-        if GUI.password_save != "": #save case for user (currently prints twice)
-            GUI.ent_password.insert(0, GUI.password_save)
-        else:
-            GUI.ent_password.insert(0, "Password")
-        
+
         GUI.ent_email.pack()
         GUI.ent_email.insert(0, "Email")
         GUI.btn_signup.pack(side='bottom')
@@ -90,19 +104,51 @@ class GUI:
         email_tuple = (email,)
 
         if username == "" or email == "" or password == "": #empty fields check
-            print("One or more fields is empty")
+            alert = tk.Tk()
+
+            lbl_empty_fields_alert = tk.Label(alert, text = "One or more fields are empty",
+            fg = "black",
+            bg = "thistle",
+            width = 50,
+            height = 7)
+
+            lbl_empty_fields_alert.pack()
+
+            alert.mainloop()
         else:
             res = cur.execute("SELECT Username FROM Accounts WHERE Username = ?", username_tuple)
             taken_username = res.fetchone()
 
             if username_tuple == taken_username: #valid username check
-                print("This username is already taken")
+                alert = tk.Tk()
+
+                lbl_empty_fields_alert = tk.Label(alert, text = "This username is already taken",
+                fg = "black",
+                bg = "thistle",
+                width = 50,
+                height = 7)
+
+                lbl_empty_fields_alert.pack()
+
+                alert.mainloop()
+
             else:
                 res = cur.execute("SELECT Email FROM Accounts WHERE Email = ?", email_tuple)
                 taken_email = res.fetchone()
 
                 if email_tuple == taken_email: #valid email check (duplicates only)
-                    print("This email is already taken")
+                    alert = tk.Tk()
+
+                    lbl_empty_fields_alert = tk.Label(alert, text = "This email is already taken",
+                    fg = "black",
+                    bg = "thistle",
+                    width = 50,
+                    height = 7)
+
+                    lbl_empty_fields_alert.pack()
+
+                    alert.mainloop()
+
                 else:
                     GUI.createAccount(username, email, password_hash)
                     GUI.closeSignup()
@@ -114,7 +160,7 @@ class GUI:
         GUI.ent_email.pack_forget()
         GUI.ent_password.pack_forget()
         GUI.btn_signup.pack_forget()
-        GUI.showProfileCreate()
+        GUI.openProfileCreate()
 
 #acc creation
 
@@ -134,7 +180,7 @@ class GUI:
 
 #profile creation
 
-    def showProfileCreate(): #TODO: needs label saying to create remember HireeID to assign to org
+    def openProfileCreate():
         GUI.lbl_create_profile.pack()
         hiree_id.set("HireeID: {}".format(GUI.freshHireeID))
         lbl_hiree_id.pack()
@@ -169,9 +215,32 @@ class GUI:
         are_you_hired = GUI.ent_are_you_hired.get()
         are_you_hiring_manager = GUI.ent_are_you_hiring_manager.get()
 
+        try:
+            years_of_experience = int(years_of_experience)
+        except:
+            alert = tk.Tk()
+
+            lbl_empty_fields_alert = tk.Label(alert, text = "Please input an integer",
+            fg = "black",
+            bg = "thistle",
+            width = 50,
+            height = 7)
+
+            lbl_empty_fields_alert.pack()
+
+            alert.mainloop()
+
         if first_name == "" or last_name == "" or department == "" or job_title == "" or "" or years_of_experience == "":
             alert = tk.Tk()
-            GUI.lbl_empty_fields_alert.pack()
+
+            lbl_empty_fields_alert = tk.Label(alert, text = "One or more fields are empty",
+            fg = "black",
+            bg = "thistle",
+            width = 50,
+            height = 7)
+
+            lbl_empty_fields_alert.pack()
+
             alert.mainloop()
         else: 
             GUI.createProfile(first_name, last_name, suffix, department, job_title, years_of_experience, bachelors_from, are_you_hired, are_you_hiring_manager)
@@ -184,8 +253,9 @@ class GUI:
         profile_cur = con.cursor()
         profile_cur.execute("INSERT INTO Info (HireeID, First_Name, Last_Name, Suffix) VALUES (?, ?, ?, ?)", info_info)
         profile_cur.execute("INSERT INTO Data (HireeID, Department, JobTitle, YearsOfExperience, BachelorsFrom) VALUES (?, ?, ?, ?, ?)", data_info)
-        if hired_info[0] != "":
+        if hired_info[1] != "": #if hired
             profile_cur.execute("INSERT INTO Hired (HireeID, OrgID, HiringManager) VALUES (?, ?, ?)", hired_info)
+            GUI.is_hired = True
         con.commit()
         GUI.closeProfileCreate()
 
@@ -214,33 +284,116 @@ class GUI:
         GUI.freshOrgID = max[0] + 1
         return max[0] + 1
 
+    def openOrgCreate():
+        GUI.closeLogin()
+        GUI.btn_org_navigate.pack_forget() #finish closing prev window
+        GUI.lbl_create_org.pack()
+        org_id.set("OrgID: {}".format(GUI.getFreshOrgID()))
+        lbl_org_id.pack()
+        GUI.ent_org_name.pack()
+        GUI.ent_org_name.insert(0, "Org Name")
+        GUI.ent_industry.pack()
+        GUI.ent_industry.insert(0, "Industry")
+        GUI.lbl_org_create_looking_for_applicants.pack()
+        GUI.ent_looking_for_applicants.pack()
+        GUI.ent_looking_for_applicants.insert(0, "Looking for Applicants?")
+        GUI.btn_create_org.pack()
+
+    def closeOrgCreate():
+        GUI.lbl_create_org.pack_forget()
+        lbl_org_id.pack_forget()
+        GUI.ent_org_name.pack_forget()
+        GUI.ent_industry.pack_forget()
+        GUI.lbl_org_create_looking_for_applicants.pack_forget()
+        GUI.ent_looking_for_applicants.pack_forget()
+        GUI.btn_create_org.pack_forget()
+
+    def createOrgAuthentication():
+        org_name = GUI.ent_org_name.get()
+        industry = GUI.ent_industry.get()
+        looking_for_applicants = GUI.ent_looking_for_applicants.get()
+
+        try:
+            looking_for_applicants = int(looking_for_applicants)
+        except:
+            alert = tk.Tk()
+
+            lbl_empty_fields_alert = tk.Label(alert, text = "Please input an integer",
+            fg = "black",
+            bg = "thistle",
+            width = 50,
+            height = 7)
+
+            lbl_empty_fields_alert.pack()
+
+            alert.mainloop()
+
+        if org_name == "" or industry == "" or looking_for_applicants == "":
+            alert = tk.Tk()
+
+            lbl_empty_fields_alert = tk.Label(alert, text = "One or more fields are empty",
+            fg = "black",
+            bg = "thistle",
+            width = 50,
+            height = 7)
+
+            lbl_empty_fields_alert.pack()
+
+            alert.mainloop()
+        else:
+            GUI.createOrg(org_name, industry, looking_for_applicants)
+
     def createOrg(org_name, industry, looking_for_applicants):
-        org_info = (org_name, industry, looking_for_applicants)
+        org_info = (GUI.getFreshOrgID(), org_name, industry, looking_for_applicants)
         org_cur = con.cursor()
-        org_cur.execute("INSERT INTO Orgs (Name, Industry, LookingForApplicants) VALUES(?, ?, ?)", org_info)
+        org_cur.execute("INSERT INTO Orgs (OrgID, Name, Industry, LookingForApplicants) VALUES(?, ?, ?, ?)", org_info)
         con.commit()
+        GUI.closeOrgCreate()
+        GUI.ent_username.delete(0, tk.END)
+        GUI.ent_password.delete(0, tk.END)
+        GUI.openLogin()
 
 #main GUI
 
     def searchOrgs():
         table_cur = con.cursor()
-        table = ttk.Treeview(columns = ("Org Name"))
+        table = ttk.Treeview(root, columns = ("Org Name",), show = "headings")
         for row in table_cur.execute("SELECT Name FROM Orgs WHERE LookingForApplicants = 1"):
             table.insert("", tk.END, values = row)
         table.heading("Org Name", text = "Name")
-        table.pack()
+        table.pack(fill = "both", expand = True)
 
     def findHirees():
-        pass #TODO
+        columns = ("First Name", "Last Name", "Email", "Department", "Job Title", "Years of Experience", "Bachelors From")
+        table_cur = con.cursor()
+        table = ttk.Treeview(root, columns = columns, show = "headings")
+        for row in table_cur.execute("SELECT i.First_Name, i.Last_Name, a.email, d.Department, d.JobTitle, d.YearsOfExperience, d.BachelorsFrom FROM Info AS i JOIN Accounts as a ON i.HireeID = a.HireeID JOIN Data as d ON a.HireeID = d.HireeID"):
+            table.insert("", tk.END, values = row)
+        table.heading("First Name", text = "First Name")
+        table.heading("Last Name", text="Last Name")
+        table.heading("Email", text="Email")
+        table.heading("Department", text = "Department")
+        table.heading("Job Title", text = "Job Title")
+        table.heading("Years of Experience", text= "Years of Experience")
+        table.heading("Bachelors From", text = "Bachelors From")
+        table.pack(fill = "both", expand = True)
    
     def openDefaultScreen():
-        #TODO: if hiring manager
-        #     btn_find_hiree.pack()
-        # else:    
-        GUI.btn_show_profile.pack(side = 'bottom')
-        GUI.btn_search.pack(side = 'bottom')
+        username_tuple = (GUI.username_save,)
+        cur.execute("SELECT HiringManager FROM Hired AS h JOIN Accounts AS a ON h.HireeID = a.HireeID WHERE a.Username = ?", username_tuple)
+        res = cur.fetchone()
+        if res[0] == 1:
+            GUI.is_manager = True
+        else:
+            GUI.is_manager = False
+    
+        GUI.btn_open_profile.pack(side = 'bottom')
+        if GUI.is_manager == True:
+            GUI.btn_find_hirees.pack()
+        else:    
+            GUI.btn_search.pack(side = 'bottom')
 
-    def showProfile():
+    def openProfile():
         cur = con.cursor()
         hiree_id_number = GUI.getHireeID(GUI.username_save)
         hiree_id_tuple = (hiree_id_number,)
@@ -254,6 +407,7 @@ class GUI:
         job_title.set("Job Title: {}".format(giant_tuple[5]))
         years_of_experience.set("Years of Experience: {}".format(giant_tuple[6]))
         bachelors_from.set("Bachelors From: {}".format(giant_tuple[7]))
+        
         GUI.lbl_account_info.pack() #categorizes as acc info
         lbl_name.pack()
         lbl_hiree_id.pack()
@@ -262,40 +416,99 @@ class GUI:
         GUI.lbl_info_info.pack()
         lbl_department.pack()
         lbl_job_title.pack()
-        if giant_tuple[6] != "":
+        if giant_tuple[6] != "": #hides demotivating fields
             lbl_years_of_experience.pack()
         if giant_tuple[7] != "":
             lbl_bachelors_from.pack()
-        #TODO: if hired
-            # GUI.lbl_org_info.pack()
-            # lbl_org_id.pack()
-            # lbl_org_name.pack()
-            # lbl_industry.pack()
-            # lbl_looking_for_applicants.pack()
-        GUI.ent_change_username.pack(side='bottom')
+        if GUI.is_hired:
+            cur.execute("SELECT h.OrgID, h.HiringManager, o.Name, o.Industry, o.LookingForApplicants FROM Hired AS h JOIN Orgs AS o ON h.OrgID = o.OrgID WHERE h.HireeID = ?", hiree_id_tuple)
+            hired_tuple = cur.fetchone()
+            if hired_tuple[1] == 1:
+                GUI.lbl_is_manager.pack()
+            GUI.lbl_org_info.pack()
+            org_id.set("Org ID: {}".format(hired_tuple[0]))
+            org_name.set("Org Name: {}".format(hired_tuple[2]))
+            industry.set("Industry: {}".format(hired_tuple[3]))
+
+            if hired_tuple[4] == 1:
+                hiring = True
+            else:
+                hiring = False
+            looking_for_applicants.set("Looking for Applicants: {}".format(hiring))
+
+            lbl_org_id.pack()
+            lbl_org_name.pack()
+            lbl_industry.pack()
+            lbl_looking_for_applicants.pack()
+            
+        GUI.btn_close_profile.pack()
+        GUI.ent_change_username.pack()
         GUI.ent_change_username.insert(0, "Change username: ")
         GUI.btn_change_username.pack()
-        GUI.btn_delete_account.pack(side='bottom') #TODO: make sure bottommost button
-        #TODO: remove search and show profile buttons
-        #TODO: make and call a closeDefaultScreen
+        GUI.btn_delete_account.pack(side='bottom')
+        if GUI.is_manager:
+            GUI.btn_find_hirees.pack_forget()
+        else:
+            GUI.btn_search.pack_forget()
+        GUI.btn_open_profile.pack_forget()
+
+    def closeProfile():
+        cur = con.cursor()
+        hiree_id_number = GUI.getHireeID(GUI.username_save)
+        hiree_id_tuple = (hiree_id_number,)
+        cur.execute("SELECT a.Email, i.First_Name, i.Last_Name, i.Suffix, d.Department, d.JobTitle, d.YearsOfExperience, d.BachelorsFrom FROM Accounts AS a JOIN Info as i ON a.HireeID = i.HireeID JOIN Data as d ON i.HireeID = d.HireeID WHERE a.HireeID = ?;", hiree_id_tuple)
+        giant_tuple = cur.fetchone()
+
+        if giant_tuple[6] != "":
+           lbl_years_of_experience.pack_forget()
+        if giant_tuple[7] != "":
+            lbl_bachelors_from.pack_forget()
+        if GUI.is_hired:
+            GUI.lbl_org_info.pack_forget()
+            lbl_org_id.pack_forget()
+            lbl_org_name.pack_forget()
+            lbl_industry.pack_forget()
+            lbl_looking_for_applicants.pack_forget()
+        if GUI.is_manager:
+            GUI.lbl_is_manager.pack_forget()
+
+        GUI.lbl_account_info.pack_forget() #categorizes as acc info
+        lbl_name.pack_forget()
+        lbl_hiree_id.pack_forget()
+        lbl_username.pack_forget()
+        lbl_email.pack_forget()
+        GUI.lbl_info_info.pack_forget()
+        lbl_department.pack_forget()
+        lbl_job_title.pack_forget()
+        GUI.btn_close_profile.pack_forget()
+        GUI.ent_change_username.pack_forget()
+        GUI.btn_change_username.pack_forget()
+        GUI.btn_delete_account.pack_forget()
+        GUI.openDefaultScreen()
 
     def changeUsername():
         cur = con.cursor()
         hiree_id_number = GUI.getHireeID(GUI.username_save)
         new_username = GUI.ent_change_username.get()
+        GUI.username_save = new_username #update username var in class
         tuple = (new_username, hiree_id_number,)
-        cur.execute("UPDATE Accounts SET Username = ? WHERE a.HireeID = ?;", tuple)
+        cur.execute("UPDATE Accounts SET Username = ? WHERE Accounts.HireeID = ?;", tuple)
         con.commit()
-        #if doesn't update, call showProfile() again
+        GUI.closeProfile() #updates profile to have new username
+        GUI.openProfile()
 
     def deleteAccount():
         cur = con.cursor()
         hiree_id_number = GUI.getHireeID(GUI.username_save)
         hiree_id_tuple = (hiree_id_number,)
+        GUI.closeProfile()
         cur.execute("DELETE FROM Accounts WHERE HireeID = ?", hiree_id_tuple)
         cur.execute("DELETE FROM Info WHERE HireeID = ?", hiree_id_tuple)
         cur.execute("DELETE FROM Data WHERE HireeID = ?", hiree_id_tuple)
+        if GUI.is_hired: #if hired, delete from Hired
+            cur.execute("DELETE FROM Hired WHERE HireeID = ?", hiree_id_tuple)
         con.commit()
+        GUI.openLogin()
 
 #login assets
 
@@ -309,12 +522,6 @@ class GUI:
         )
 
     lbl_make_manager = tk.Label(text = "You will be making a manager account",
-        fg = "black",
-        bg = "thistle",
-        width = 50,
-        height = 7)
-
-    lbl_empty_fields_alert = tk.Label(text = "One or more fields are empty",
         fg = "black",
         bg = "thistle",
         width = 50,
@@ -415,12 +622,25 @@ class GUI:
 
 #create org
 
-    btn_create_org = tk.Button(text = "Make Org",
+    lbl_create_org = tk.Label(text="Create Org by filling out the fields below. You may create a Hiring Manager profile after",
+        fg = "black",
+        bg = "thistle",
+        width = 100,
+        height = 3)
+
+    btn_org_navigate = tk.Button(text = "Make Org",
         fg = "black",
         bg = "thistle",
         width = 10,
         height = 1,
-        command = createOrg)
+        command = openOrgCreate)
+
+    btn_create_org = tk.Button(text = "Create Org",
+        fg = "black",
+        bg = "thistle",
+        width = 10,
+        height = 1,
+        command = createOrgAuthentication)
     
     ent_org_name = tk.Entry(fg = "black",
         bg = "white",
@@ -429,6 +649,12 @@ class GUI:
     ent_industry = tk.Entry(fg = "black",
         bg = "white",
         width = 30)
+
+    lbl_org_create_looking_for_applicants = tk.Label(text = "Are you looking for applicants? (0 for No, 1 for Yes)",
+        fg = "black",
+        bg = "thistle",
+        width = 100,
+        height = 3)
 
     ent_looking_for_applicants = tk.Entry(fg = "black",
         bg = "white",
@@ -459,15 +685,22 @@ class GUI:
     lbl_is_manager = tk.Label(text = "Our records indicate you are a manager",
         fg = "black",
         bg = "thistle",
-        width = 50,
+        width = 100,
         height = 7)
 
-    btn_show_profile = tk.Button(text = "Show Profile",
+    btn_open_profile = tk.Button(text = "Open Profile",
         fg = "black",
         bg = "thistle",
         width = 10,
         height = 1,
-        command = showProfile)
+        command = openProfile)
+
+    btn_close_profile = tk.Button(text = "Close Profile",
+        fg = "black",
+        bg = "thistle",
+        width = 10,
+        height = 1,
+        command = closeProfile)
 
     btn_search = tk.Button(text = "Search",
         fg = "black",
@@ -497,7 +730,7 @@ class GUI:
     btn_find_hirees = tk.Button(text = "Find Hirees",
         fg = "black",
         bg = "thistle",
-        width = 5,
+        width = 15,
         height = 1,
         command = findHirees) 
 
@@ -520,6 +753,7 @@ job_title = tk.StringVar()
 years_of_experience = tk.StringVar()
 bachelors_from = tk.StringVar()
 org_id = tk.StringVar()
+hiring_manager = tk.StringVar()
 org_name = tk.StringVar()
 industry = tk.StringVar()
 looking_for_applicants = tk.StringVar()
@@ -576,7 +810,7 @@ lbl_org_id = tk.Label(textvariable = org_id,
     fg = "black",
     bg = "thistle",
     width = 100,
-    height = 3) 
+    height = 3)
 
 lbl_org_name = tk.Label(textvariable = org_name,
     fg = "black",
